@@ -1,0 +1,19 @@
+# Python 3.10 - 3.12.  PyTorch is preinstalled on Google Colab; elsewhere install it first.
+torch>=2.0
+numpy
+scipy
+scikit-learn
+pandas
+matplotlib
+pyyaml
+tqdm
+tensorboard
+librosa>=0.10
+soundfile
+pyworld
+tgt
+unidecode
+inflect
+nltk
+g2p_en
+# Montreal Forced Aligner is installed with conda (see README, step 2), not with pip.

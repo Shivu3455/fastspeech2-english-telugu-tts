@@ -1,0 +1,90 @@
+# ===================== English (Svarah) - FastSpeech 2 =====================
+# One file with three sections: preprocess / model / train.
+# Paths are relative to the English/ folder.  On Colab, make ./preprocessed_data,
+# ./checkpoints and ./output symlinks to Google Drive (see README).
+
+preprocess:
+  dataset: "Svarah"
+  inference_speaker: "auto"          # speaker used for the test sentences ('auto' = most training data)
+
+  path:
+    lexicon_path: "lexicon/librispeech-lexicon.txt"
+    raw_path: "./raw_data"                      # <speaker>/<utt>.wav + .lab  (22.05 kHz mono)
+    preprocessed_path: "./preprocessed_data"    # TextGrid/<speaker>/*.TextGrid goes in here
+    split_csv: "./data_split/svarah_split.csv"  # train/val assignment (split by recording)
+
+  preprocessing:
+    val_size: 512                    # only used when no split_csv is given
+    fill_gaps: False                 # True = turn silences missing from the TextGrid into 'sp' (see README, known issues)
+    split_speaker_column: "spk_name"
+    text:
+      text_cleaners: ["english_cleaners"]
+      language: "en"
+      heteronym_rules: True          # noun/verb rule for 'conduct'
+    audio:
+      sampling_rate: 22050
+      max_wav_value: 32768.0
+    stft:
+      filter_length: 1024
+      hop_length: 256
+      win_length: 1024
+    mel:
+      n_mel_channels: 80
+      mel_fmin: 0
+      mel_fmax: 8000                 # 8000 for HiFi-GAN
+    pitch:
+      feature: "phoneme_level"
+      normalization: True
+    energy:
+      feature: "phoneme_level"
+      normalization: True
+
+model:
+  transformer:
+    encoder_layer: 4
+    encoder_head: 2
+    encoder_hidden: 256
+    decoder_layer: 6
+    decoder_head: 2
+    decoder_hidden: 256
+    conv_filter_size: 1024
+    conv_kernel_size: [9, 1]
+    encoder_dropout: 0.2
+    decoder_dropout: 0.2
+  variance_predictor:
+    filter_size: 256
+    kernel_size: 3
+    dropout: 0.5
+  variance_embedding:
+    pitch_quantization: "linear"
+    energy_quantization: "linear"
+    n_bins: 256
+  multi_speaker: True                # 102 speaker groups
+  max_seq_len: 1000
+  vocoder:
+    model: "HiFi-GAN"
+    speaker: "universal"             # pretrained universal HiFi-GAN, not fine-tuned
+
+train:
+  path:
+    ckpt_path: "./checkpoints"
+    log_path: "./output/log"
+    result_path: "./output/result"
+  optimizer:
+    batch_size: 16
+    betas: [0.9, 0.98]
+    eps: 0.000000001
+    weight_decay: 0.0
+    grad_clip_thresh: 1.0
+    grad_acc_step: 1
+    warm_up_step: 4000
+    anneal_steps: [5000, 7000]
+    anneal_rate: 0.3
+  step:
+    total_step: 8000
+    log_step: 50
+    synth_step: 1000
+    val_step: 500
+    save_step: 1000
+    keep_last: 20                    # newest checkpoints to keep
+    keep_every: 10000                # also keep every 10000th step
